@@ -17,6 +17,41 @@ app.get ('/', function (request, response) {
 app.get ('/bookings', (req, res) => {
   res.send (bookings);
 });
+
+//Level 5 search with given term
+
+app.get ('/bookings/search', (req, res) => {
+  let term = req.query.term;
+  let filtered = bookings.filter (
+    booking =>
+      booking.firstName.includes (term) ||
+      booking.surname.includes (term) ||
+      booking.email.includes (term)
+  );
+  if (filtered) {
+    res.json (filtered);
+  } else {
+    res.sendStatus (404);
+  }
+});
+
+//for Level3 date validation
+let moment = require ('moment');
+//moment.format ();
+app.get ('/bookings/search', (req, res) => {
+  let chosenDate = req.query.date;
+  if (moment (chosenDate, 'YYYY-MM-DD').isValid ()) {
+    let searchedBooking = bookings.filter (booking =>
+      moment (booking.checkInDate).isBefore (chosenDate)
+    );
+    if (searchedBooking) {
+      res.json (searchedBooking);
+    } else {
+      res.send ('Date is not the right format');
+    }
+  }
+});
+
 //display booking by id
 app.get ('/bookings/:id', (req, res) => {
   const id = req.params.id;
@@ -27,6 +62,9 @@ app.get ('/bookings/:id', (req, res) => {
     res.sendStatus (404);
   }
 });
+
+// Add new booking
+var validator = require ('email-validator');
 
 app.post ('/bookings', (req, res) => {
   let booking = req.body;
@@ -46,7 +84,12 @@ app.post ('/bookings', (req, res) => {
   ) {
     check = 1;
   }
-  if (check === 1) {
+
+  if (!validator.validate (booking.email)) {
+    res.send ('not valid email');
+  } else if (!moment (booking.checkOutDate).isAfter (booking.checkInDate)) {
+    res.send ('check out date is before check in date');
+  } else if (check === 1) {
     bookings.push (booking);
     res.send ('One record added');
   } else {
@@ -68,7 +111,7 @@ app.delete ('/bookings/:id', (req, res) => {
   }
 });
 
-// TODO add your routes and helper functions here
+// let dateTime = moment ().format ('YYYY-MM-DD');
 
 // const listener = app.listen(process.env.PORT, function () {
 //   console.log("Your app is listening on port " + listener.address().port);
